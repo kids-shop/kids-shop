@@ -489,7 +489,29 @@ def user_page():
                             u = session.query(User).filter_by(username=st.session_state['user']).first()
                             u.total_items_bought += o.item_count
                             session.commit(); st.rerun()
+# --- 主程序 ---
+def main():
+    lang_opts = list(LANGUAGES.keys())
+    sel_lang = st.sidebar.selectbox("Language / ภาษา", lang_opts, index=lang_opts.index("ไทย"))
+    st.session_state['language'] = LANGUAGES[sel_lang]
 
+    if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
+    
+    if not st.session_state['logged_in']:
+        st.subheader(t("login_title"))
+        u = st.text_input(t("login_placeholder"))
+        if st.button(t("login_btn")):
+            with Session(engine) as session:
+                user = session.query(User).filter_by(username=u).first()
+                if user:
+                    st.session_state['logged_in'] = True
+                    st.session_state['user'] = user.username
+                    st.session_state['role'] = user.role
+                    st.rerun()
+                else: st.error(t("login_error"))
+    else:
+        if st.session_state['role'] == 'admin': admin_page()
+        else: user_page()                        
 if __name__ == "__main__":
     auto_migrate_db()
     with Session(engine) as session:
